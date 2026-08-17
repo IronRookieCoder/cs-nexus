@@ -1,0 +1,64 @@
+version: 1
+
+routing:
+  clarification:
+    skill: mattpocock/skills:grilling
+  design:
+    skill: obra/superpowers:brainstorming
+  planning:
+    skill: obra/superpowers:writing-plans
+  debugging:
+    skill: obra/superpowers:systematic-debugging
+  sequential-execution:
+    skill: obra/superpowers:executing-plans
+  parallel-execution:
+    skill: obra/superpowers:subagent-driven-development
+  verification:
+    skill: obra/superpowers:verification-before-completion
+
+dependencies:
+  mattpocock/skills:grill-me:
+    requires:
+      - mattpocock/skills:grilling
+  obra/superpowers:brainstorming:
+    requires:
+      - obra/superpowers:writing-plans
+  obra/superpowers:executing-plans:
+    requires:
+      - obra/superpowers:using-git-worktrees
+      - obra/superpowers:writing-plans
+      - obra/superpowers:finishing-a-development-branch
+  obra/superpowers:subagent-driven-development:
+    requires:
+      - obra/superpowers:using-git-worktrees
+      - obra/superpowers:requesting-code-review
+      - obra/superpowers:finishing-a-development-branch
+
+providers:
+  local:task-router:
+    source: ./skills/task-router
+    name: task-router
+    install:
+      type: agent-skill
+
+policy:
+  default: auto
+  complex_when:
+    - architecture-change
+    - cross-service
+    - public-api-change
+    - db-migration
+    - security
+    - permissions
+    - billing
+    - concurrency
+    - high-verification-cost
+  escalation:
+    enabled: true
+    direction: simple-to-complex
+
+installation:
+  agent: auto
+  scope: global
+  include:
+    - local:task-router

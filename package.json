@@ -1,0 +1,27 @@
+{
+  "name": "cs-nexus",
+  "version": "0.1.0",
+  "description": "面向 AI Coding Agent 的轻量任务路由与 Skill Bootstrap",
+  "type": "module",
+  "bin": {
+    "ai-coding": "./bin/ai-coding.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "skills",
+    "ai-coding.yaml",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check bin/ai-coding.js && node --check src/config.js && node --check src/dependencies.js && node --check src/install-plan.js && node --check src/setup.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "yaml": "^2.8.1"
+  },
+  "license": "MIT"
+}

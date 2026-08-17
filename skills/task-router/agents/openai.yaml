@@ -1,0 +1,4 @@
+interface:
+  display_name: "Task Router"
+  short_description: "按风险、不确定性和任务类型自动选择最小充分的开发流程"
+  default_prompt: "Use $task-router to route this development request to the appropriate workflow."
