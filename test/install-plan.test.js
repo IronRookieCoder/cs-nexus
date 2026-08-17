@@ -95,5 +95,5 @@ test("npx arguments are non-interactive and preserve installation scope", () => 
     copy: true,
     skills: ["task-router"]
   }, "codex").includes("--copy"));
-  assert.deepEqual(buildListArgs("project", "codex"), ["--yes", "skills", "list", "--agent", "codex"]);
+  assert.deepEqual(buildListArgs("project", "codex"), ["--yes", "skills", "list", "--agent", "codex", "--json"]);
 });

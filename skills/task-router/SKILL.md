@@ -11,7 +11,14 @@ Stay quiet about internal labels and providers unless the route changes, a user 
 
 ## Read policy
 
-Look for `ai-coding.yaml` in the current project. Use its `routing`, `policy`, and `dependencies` values when present. Otherwise use the capabilities already available to the agent and the rules below. Never install a missing capability during an ordinary task; report the gap or use a safe native fallback.
+Resolve policy configuration in this order:
+
+1. `ai-coding.yaml` in the current project.
+2. `.ai-coding/ai-coding.yaml` in the current project.
+3. The file named by `AI_CODING_CONFIG`.
+4. `~/.ai-coding/ai-coding.yaml`, written by global `ai-coding setup`.
+
+Use the first file found and read its `routing`, `policy`, and `dependencies` values. Otherwise use the capabilities already available to the agent and the rules below. Never install a missing capability during an ordinary task; report the gap or use a safe native fallback.
 
 Recognize only these user overrides:
 

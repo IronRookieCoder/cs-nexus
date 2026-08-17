@@ -62,7 +62,7 @@ export function buildNpxArgs(group, agent) {
 export function buildListArgs(scope, agent) {
   const args = ["--yes", "skills", "list"];
   if (scope === "global") args.push("--global");
-  args.push("--agent", agent);
+  args.push("--agent", agent, "--json");
   return args;
 }
 

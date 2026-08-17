@@ -9,9 +9,26 @@ function fakeIo(overrides = {}) {
     cwd: "/workspace",
     home: "/home/user",
     exists: () => false,
+    readFile: async () => "version: 1\n",
+    mkdir: async () => {},
+    writeFile: async () => {},
     ...overrides
   };
 }
+
+const installedSkills = [
+  "grilling",
+  "writing-plans",
+  "brainstorming",
+  "systematic-debugging",
+  "using-git-worktrees",
+  "finishing-a-development-branch",
+  "executing-plans",
+  "requesting-code-review",
+  "subagent-driven-development",
+  "verification-before-completion",
+  "task-router"
+].map((name) => ({ name }));
 
 test("detectAgent honors explicit environment and agent runtime markers", () => {
   assert.equal(detectAgent(fakeIo({ env: { AI_CODING_AGENT: "cursor" } })), "cursor");
@@ -75,13 +92,18 @@ test("setup dry-run renders the default install plan without spawning", async ()
 
 test("setup executes install groups followed by installed-skill verification", async () => {
   const calls = [];
+  const writes = [];
   const io = {
     ...fakeIo(),
     log: () => {},
     spawn: (command, args) => {
       calls.push([command, ...args]);
-      return { status: 0 };
+      return args.includes("list")
+        ? { status: 0, stdout: JSON.stringify(installedSkills) }
+        : { status: 0 };
     },
+    mkdir: async (...args) => writes.push(["mkdir", ...args]),
+    writeFile: async (...args) => writes.push(["writeFile", ...args]),
     confirm: async () => true
   };
 
@@ -95,4 +117,29 @@ test("setup executes install groups followed by installed-skill verification", a
   assert.ok(calls.slice(0, 3).every((call) => call.includes("add")));
   assert.ok(calls.slice(0, 3).every((call) => !call.includes("--global")));
   assert.ok(calls[3].includes("list"));
+  assert.ok(calls[3].includes("--json"));
+  assert.equal(writes[0][1], path.join("/workspace", ".ai-coding"));
+  assert.equal(writes[1][1], path.join("/workspace", ".ai-coding", "ai-coding.yaml"));
+});
+
+test("setup fails when an expected skill is absent and does not persist policy", async () => {
+  let writeCount = 0;
+  const io = {
+    ...fakeIo(),
+    log: () => {},
+    spawn: (command, args) => args.includes("list")
+      ? { status: 0, stdout: JSON.stringify(installedSkills.filter(({ name }) => name !== "task-router")) }
+      : { status: 0 },
+    writeFile: async () => {
+      writeCount += 1;
+    },
+    confirm: async () => true
+  };
+
+  await assert.rejects(() => setup({
+    config: path.resolve("ai-coding.yaml"),
+    agent: "codex",
+    scope: "global"
+  }, io), /安装验证失败，缺少 Skill：task-router/);
+  assert.equal(writeCount, 0);
 });

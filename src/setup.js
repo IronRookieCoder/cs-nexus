@@ -1,4 +1,5 @@
 import { existsSync } from "node:fs";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import process from "node:process";
@@ -39,6 +40,8 @@ export async function setup(options, io = defaultIo()) {
 
   io.log(`检测到 Agent：${agent}`);
   io.log(`安装范围：${scope === "global" ? "全局" : "当前项目"}`);
+  const policyPath = policyConfigPath(scope, io);
+  io.log(`策略配置：${policyPath}`);
   io.log(formatPlan(plan));
 
   if (options.dryRun) {
@@ -68,13 +71,32 @@ export async function setup(options, io = defaultIo()) {
     }
   }
 
-  runChecked(io, npxCommand(), buildListArgs(scope, agent));
+  const installed = runCapturedJson(io, npxCommand(), buildListArgs(scope, agent));
+  verifyInstalledSkills(plan, installed);
+  await persistPolicyConfig(config.configPath, policyPath, io);
   if (plan.manual.length > 0) {
     io.log("Agent Skill 已安装；仍有外部能力需要按上方官方指南手动完成。");
   } else {
     io.log("Ready.");
   }
   return plan;
+}
+
+export function policyConfigPath(scope, io = defaultIo()) {
+  const base = scope === "project" ? io.cwd : io.home;
+  return path.join(base, ".ai-coding", "ai-coding.yaml");
+}
+
+export function verifyInstalledSkills(plan, installed) {
+  if (!Array.isArray(installed)) {
+    throw new Error("skills list 返回的 JSON 必须是数组");
+  }
+  const installedNames = new Set(installed.map((item) => item?.name).filter(Boolean));
+  const expectedNames = [...new Set(plan.agentSkills.flatMap((group) => group.skills))];
+  const missing = expectedNames.filter((name) => !installedNames.has(name));
+  if (missing.length > 0) {
+    throw new Error(`安装验证失败，缺少 Skill：${missing.join(", ")}`);
+  }
 }
 
 export function detectAgent(io = defaultIo()) {
@@ -143,6 +165,25 @@ function runChecked(io, executable, args) {
   }
 }
 
+function runCapturedJson(io, executable, args) {
+  const result = io.spawn(executable, args, { encoding: "utf8", shell: false });
+  if (result.error) throw new Error(`无法执行 ${executable}：${result.error.message}`);
+  if (result.status !== 0) {
+    throw new Error(`命令执行失败（退出码 ${String(result.status)}）：${renderCommand([executable, ...args])}`);
+  }
+  try {
+    return JSON.parse(String(result.stdout ?? ""));
+  } catch (error) {
+    throw new Error(`无法解析 Skill 安装验证结果：${error.message}`);
+  }
+}
+
+async function persistPolicyConfig(sourcePath, destinationPath, io) {
+  const source = await io.readFile(sourcePath, "utf8");
+  await io.mkdir(path.dirname(destinationPath), { recursive: true });
+  await io.writeFile(destinationPath, source, "utf8");
+}
+
 function npxCommand() {
   return process.platform === "win32" ? "npx.cmd" : "npx";
 }
@@ -166,7 +207,9 @@ function defaultIo() {
     home: os.homedir(),
     exists: existsSync,
     spawn: spawnSync,
-    readFile: async (...args) => (await import("node:fs/promises")).readFile(...args),
+    readFile,
+    writeFile,
+    mkdir,
     log: console.log,
     async confirm(question) {
       const terminal = readline.createInterface({ input: process.stdin, output: process.stdout });

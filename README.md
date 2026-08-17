@@ -37,6 +37,8 @@ ai-coding setup --agent codex
 ai-coding setup --agent claude-code
 ```
 
+Setup 验证所有 Agent Skill 都已出现在 `skills list --json` 后，才会保存 Router 使用的策略配置并输出 `Ready.`。全局安装保存到 `~/.ai-coding/ai-coding.yaml`，项目安装保存到当前项目的 `.ai-coding/ai-coding.yaml`；项目根目录中的 `ai-coding.yaml` 优先级最高。
+
 常用参数：
 
 ```text
