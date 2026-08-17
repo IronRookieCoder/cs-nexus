@@ -27,7 +27,7 @@ export async function loadConfig(configPath) {
   return validateConfig(value, absolutePath);
 }
 
-export function validateConfig(value, configPath = path.resolve("ai-coding.yaml")) {
+export function validateConfig(value, configPath = path.resolve("cs-nexus.yaml")) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw new Error("配置必须是 YAML 对象");
   }

@@ -10,4 +10,4 @@ if ! command -v node >/dev/null 2>&1; then
 fi
 
 npm install --omit=dev
-exec node bin/ai-coding.js setup "$@"
+exec node bin/cs-nexus.js setup "$@"

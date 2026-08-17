@@ -31,7 +31,7 @@ export async function runCli(argv, io = defaultIo()) {
 }
 
 export async function setup(options, io = defaultIo()) {
-  const configPath = options.config ?? path.join(packageRoot, "ai-coding.yaml");
+  const configPath = options.config ?? path.join(packageRoot, "cs-nexus.yaml");
   const config = await loadConfig(configPath);
   const configuredAgent = options.agent ?? config.installation.agent;
   const agent = configuredAgent === "auto" ? detectAgent(io) : configuredAgent;
@@ -84,7 +84,7 @@ export async function setup(options, io = defaultIo()) {
 
 export function policyConfigPath(scope, io = defaultIo()) {
   const base = scope === "project" ? io.cwd : io.home;
-  return path.join(base, ".ai-coding", "ai-coding.yaml");
+  return path.join(base, ".cs-nexus", "cs-nexus.yaml");
 }
 
 export function verifyInstalledSkills(plan, installed) {
@@ -100,7 +100,7 @@ export function verifyInstalledSkills(plan, installed) {
 }
 
 export function detectAgent(io = defaultIo()) {
-  const explicit = io.env.AI_CODING_AGENT;
+  const explicit = io.env.CS_NEXUS_AGENT;
   if (explicit) return explicit;
   if (io.env.CODEX_HOME || io.env.CODEX_THREAD_ID) return "codex";
   if (io.env.CLAUDE_CODE || io.env.CLAUDECODE) return "claude-code";
@@ -194,10 +194,10 @@ function renderCommand(command) {
 
 function helpText() {
   return `用法：
-  ai-coding setup [--config <path>] [--agent <name>] [--global|--project] [--dry-run] [--yes]
-  ai-coding --version
+  cs-nexus setup [--config <path>] [--agent <name>] [--global|--project] [--dry-run] [--yes]
+  cs-nexus --version
 
-setup 默认读取随包提供的 ai-coding.yaml，展示完整安装计划并在执行前请求确认。`;
+setup 默认读取随包提供的 cs-nexus.yaml，展示完整安装计划并在执行前请求确认。`;
 }
 
 function defaultIo() {

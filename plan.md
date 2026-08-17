@@ -128,7 +128,7 @@ npx skills add obra/superpowers \
 
 ```text
 第一次：
-ai-coding setup
+cs-nexus setup
 
 以后：
 直接描述任务
@@ -980,7 +980,7 @@ Symlink Manager
 可以提供一个非常薄的：
 
 ```bash
-ai-coding setup
+cs-nexus setup
 ```
 
 它不是新的包管理器。
@@ -988,7 +988,7 @@ ai-coding setup
 本质：
 
 ```text
-读取 ai-coding.yaml
+读取 cs-nexus.yaml
        ↓
 解析需要的 Skills
        ↓
@@ -1189,7 +1189,7 @@ dependencies.yaml
 MVP 推荐统一：
 
 ```text
-ai-coding.yaml
+cs-nexus.yaml
 ```
 
 例如：
@@ -1582,13 +1582,13 @@ user approve install
 整个项目可以非常小：
 
 ```text
-ai-coding/
+cs-nexus/
 │
 ├── skills/
 │   └── task-router/
 │       └── SKILL.md
 │
-├── ai-coding.yaml
+├── cs-nexus.yaml
 │
 ├── scripts/
 │   └── setup.*
@@ -1628,7 +1628,7 @@ Observability Platform
 第一次：
 
 ```bash
-ai-coding setup
+cs-nexus setup
 ```
 
 可以自动：
@@ -1975,7 +1975,7 @@ Skill Update
                              │
                              ▼
                     ┌─────────────────┐
-                    │ ai-coding.yaml  │
+                    │ cs-nexus.yaml   │
                     │                 │
                     │ provider        │
                     │ dependency      │
@@ -2000,7 +2000,7 @@ Skill Update
 
                     Installation Layer
 
-                       ai-coding setup
+                       cs-nexus setup
                              │
                              ▼
                      dependency resolve

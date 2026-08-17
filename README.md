@@ -27,17 +27,17 @@ macOS / Linux：
 也可以安装 npm 包后使用统一命令：
 
 ```bash
-ai-coding setup
+cs-nexus setup
 ```
 
 Setup 会先展示安装范围、来源和完整命令，得到确认后才会安装。默认全局安装；无法自动识别 Agent 时显式传入：
 
 ```bash
-ai-coding setup --agent codex
-ai-coding setup --agent claude-code
+cs-nexus setup --agent codex
+cs-nexus setup --agent claude-code
 ```
 
-Setup 验证所有 Agent Skill 都已出现在 `skills list --json` 后，才会保存 Router 使用的策略配置并输出 `Ready.`。全局安装保存到 `~/.ai-coding/ai-coding.yaml`，项目安装保存到当前项目的 `.ai-coding/ai-coding.yaml`；项目根目录中的 `ai-coding.yaml` 优先级最高。
+Setup 验证所有 Agent Skill 都已出现在 `skills list --json` 后，才会保存 Router 使用的策略配置并输出 `Ready.`。全局安装保存到 `~/.cs-nexus/cs-nexus.yaml`，项目安装保存到当前项目的 `.cs-nexus/cs-nexus.yaml`；项目根目录中的 `cs-nexus.yaml` 优先级最高。
 
 常用参数：
 
@@ -51,7 +51,7 @@ Setup 验证所有 Agent Skill 都已出现在 `skills list --json` 后，才会
 
 ## 配置
 
-所有策略和安装信息集中在 [`ai-coding.yaml`](./ai-coding.yaml)：
+所有策略和安装信息集中在 [`cs-nexus.yaml`](./cs-nexus.yaml)：
 
 - `routing`：一个 Capability 对应一个默认 Skill Provider。
 - `dependencies`：声明 Skill 间的简单 DAG 依赖，Setup 安装完整闭包。
@@ -98,7 +98,7 @@ Router 默认保持安静，开发者无需理解内部标签。它会：
 npm install
 npm test
 npm run check
-node bin/ai-coding.js setup --agent codex --dry-run
+node bin/cs-nexus.js setup --agent codex --dry-run
 ```
 
 项目使用 Node.js 内置测试运行器，只需执行相关模块测试，无需额外测试框架。

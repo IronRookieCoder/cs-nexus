@@ -14,7 +14,7 @@ test("validateConfig normalizes route shorthand and dependency forms", () => {
       "owner/repo:debug": { requires: ["owner/repo:trace"] },
       "owner/repo:verify": ["owner/repo:evidence"]
     }
-  }, path.resolve("fixtures/ai-coding.yaml"));
+  }, path.resolve("fixtures/cs-nexus.yaml"));
 
   assert.deepEqual(config.routing.debugging, { skill: "owner/repo:debug" });
   assert.deepEqual(config.dependencies["owner/repo:verify"], ["owner/repo:evidence"]);

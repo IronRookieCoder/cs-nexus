@@ -15,7 +15,7 @@ if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
 Push-Location $projectRoot
 try {
     npm install --omit=dev
-    $arguments = @("bin/ai-coding.js", "setup")
+    $arguments = @("bin/cs-nexus.js", "setup")
     if ($Agent) { $arguments += @("--agent", $Agent) }
     if ($Project) { $arguments += "--project" }
     if ($DryRun) { $arguments += "--dry-run" }

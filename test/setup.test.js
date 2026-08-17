@@ -31,7 +31,7 @@ const installedSkills = [
 ].map((name) => ({ name }));
 
 test("detectAgent honors explicit environment and agent runtime markers", () => {
-  assert.equal(detectAgent(fakeIo({ env: { AI_CODING_AGENT: "cursor" } })), "cursor");
+  assert.equal(detectAgent(fakeIo({ env: { CS_NEXUS_AGENT: "cursor" } })), "cursor");
   assert.equal(detectAgent(fakeIo({ env: { CODEX_HOME: "/tmp/codex" } })), "codex");
   assert.equal(detectAgent(fakeIo({ env: { CLAUDECODE: "1" } })), "claude-code");
 });
@@ -76,7 +76,7 @@ test("setup dry-run renders the default install plan without spawning", async ()
   };
 
   const plan = await setup({
-    config: path.resolve("ai-coding.yaml"),
+    config: path.resolve("cs-nexus.yaml"),
     agent: "codex",
     dryRun: true
   }, io);
@@ -108,7 +108,7 @@ test("setup executes install groups followed by installed-skill verification", a
   };
 
   await setup({
-    config: path.resolve("ai-coding.yaml"),
+    config: path.resolve("cs-nexus.yaml"),
     agent: "codex",
     scope: "project"
   }, io);
@@ -118,8 +118,8 @@ test("setup executes install groups followed by installed-skill verification", a
   assert.ok(calls.slice(0, 3).every((call) => !call.includes("--global")));
   assert.ok(calls[3].includes("list"));
   assert.ok(calls[3].includes("--json"));
-  assert.equal(writes[0][1], path.join("/workspace", ".ai-coding"));
-  assert.equal(writes[1][1], path.join("/workspace", ".ai-coding", "ai-coding.yaml"));
+  assert.equal(writes[0][1], path.join("/workspace", ".cs-nexus"));
+  assert.equal(writes[1][1], path.join("/workspace", ".cs-nexus", "cs-nexus.yaml"));
 });
 
 test("setup fails when an expected skill is absent and does not persist policy", async () => {
@@ -137,7 +137,7 @@ test("setup fails when an expected skill is absent and does not persist policy",
   };
 
   await assert.rejects(() => setup({
-    config: path.resolve("ai-coding.yaml"),
+    config: path.resolve("cs-nexus.yaml"),
     agent: "codex",
     scope: "global"
   }, io), /安装验证失败，缺少 Skill：task-router/);

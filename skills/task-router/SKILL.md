@@ -13,10 +13,10 @@ Stay quiet about internal labels and providers unless the route changes, a user 
 
 Resolve policy configuration in this order:
 
-1. `ai-coding.yaml` in the current project.
-2. `.ai-coding/ai-coding.yaml` in the current project.
-3. The file named by `AI_CODING_CONFIG`.
-4. `~/.ai-coding/ai-coding.yaml`, written by global `ai-coding setup`.
+1. `cs-nexus.yaml` in the current project.
+2. `.cs-nexus/cs-nexus.yaml` in the current project.
+3. The file named by `CS_NEXUS_CONFIG`.
+4. `~/.cs-nexus/cs-nexus.yaml`, written by global `cs-nexus setup`.
 
 Use the first file found and read its `routing`, `policy`, and `dependencies` values. Otherwise use the capabilities already available to the agent and the rules below. Never install a missing capability during an ordinary task; report the gap or use a safe native fallback.
 

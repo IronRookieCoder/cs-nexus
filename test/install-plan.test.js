@@ -5,7 +5,7 @@ import { validateConfig } from "../src/config.js";
 import { buildListArgs, buildNpxArgs, createInstallPlan } from "../src/install-plan.js";
 
 test("createInstallPlan groups agent skills by source and separates external providers", () => {
-  const configPath = path.resolve("fixtures/ai-coding.yaml");
+  const configPath = path.resolve("fixtures/cs-nexus.yaml");
   const config = validateConfig({
     version: 1,
     routing: {
