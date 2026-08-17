@@ -42,7 +42,7 @@ export async function setup(options, io = defaultIo()) {
   io.log(`安装范围：${scope === "global" ? "全局" : "当前项目"}`);
   const policyPath = policyConfigPath(scope, io);
   io.log(`策略配置：${policyPath}`);
-  io.log(formatPlan(plan));
+  io.log(formatPlan(plan, io));
 
   if (options.dryRun) {
     io.log("Dry run 完成，未执行任何安装。 ");
@@ -59,7 +59,8 @@ export async function setup(options, io = defaultIo()) {
 
   for (const step of plan.steps) {
     if (step.type === "agent-skill") {
-      runChecked(io, npxCommand(), buildNpxArgs(step, agent));
+      const [executable, ...args] = npxInvocation(buildNpxArgs(step, agent), io);
+      runChecked(io, executable, args);
     } else if (step.type === "command") {
       io.log(`外部安装器 ${step.reference} 即将执行：${renderCommand(step.command)}`);
       if (!options.yes) {
@@ -71,7 +72,8 @@ export async function setup(options, io = defaultIo()) {
     }
   }
 
-  const installed = runCapturedJson(io, npxCommand(), buildListArgs(scope, agent));
+  const [listExecutable, ...listArgs] = npxInvocation(buildListArgs(scope, agent), io);
+  const installed = runCapturedJson(io, listExecutable, listArgs);
   verifyInstalledSkills(plan, installed);
   await persistPolicyConfig(config.configPath, policyPath, io);
   if (plan.manual.length > 0) {
@@ -141,11 +143,11 @@ export function parseSetupArgs(args) {
   return options;
 }
 
-function formatPlan(plan) {
+function formatPlan(plan, io) {
   const lines = ["将执行以下操作："];
   for (const step of plan.steps) {
     if (step.type === "agent-skill") {
-      lines.push(`- ${renderCommand([npxCommand(), ...buildNpxArgs(step, plan.agent)])}`);
+      lines.push(`- ${renderCommand(npxInvocation(buildNpxArgs(step, plan.agent), io))}`);
     } else if (step.type === "command") {
       lines.push(`- [需单独授权] ${renderCommand(step.command)}`);
       for (const verify of step.verify) lines.push(`  - 验证：${renderCommand(verify)}`);
@@ -184,8 +186,13 @@ async function persistPolicyConfig(sourcePath, destinationPath, io) {
   await io.writeFile(destinationPath, source, "utf8");
 }
 
-function npxCommand() {
-  return process.platform === "win32" ? "npx.cmd" : "npx";
+function npxInvocation(args, io) {
+  const platform = io.platform ?? process.platform;
+  if (platform !== "win32") return ["npx", ...args];
+
+  const execPath = io.execPath ?? process.execPath;
+  const npxCli = path.win32.join(path.win32.dirname(execPath), "node_modules", "npm", "bin", "npx-cli.js");
+  return [execPath, npxCli, ...args];
 }
 
 function renderCommand(command) {
@@ -203,6 +210,8 @@ setup 默认读取随包提供的 cs-nexus.yaml，展示完整安装计划并在
 function defaultIo() {
   return {
     env: process.env,
+    platform: process.platform,
+    execPath: process.execPath,
     cwd: process.cwd(),
     home: os.homedir(),
     exists: existsSync,

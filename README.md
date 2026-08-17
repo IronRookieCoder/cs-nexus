@@ -15,36 +15,52 @@ CS Nexus 是一个薄的 AI Coding 路由层：开发者完成一次初始化后
 克隆仓库后，在 PowerShell 中运行：
 
 ```powershell
-.\scripts\setup.ps1
+.\scripts\setup.ps1 -Agent codex
 ```
 
-macOS / Linux：
+macOS、Linux 或 Windows Git Bash：
 
 ```bash
-./scripts/setup.sh
+./scripts/setup.sh --agent codex
 ```
 
-也可以安装 npm 包后使用统一命令：
+将 `codex` 替换为 `skills` CLI 支持的其他 Agent 名称，例如 `claude-code`。如果当前环境只能识别出一个 Agent，也可以省略 Agent 参数。
+
+上述脚本会直接从当前仓库运行 Setup，不会安装全局 `cs-nexus` 命令。如果 Setup 提示无法唯一识别 Agent，请为原命令补充 Agent 参数后重新运行，例如：
 
 ```bash
-cs-nexus setup
+./scripts/setup.sh --agent codex
 ```
 
-Setup 会先展示安装范围、来源和完整命令，得到确认后才会安装。默认全局安装；无法自动识别 Agent 时显式传入：
+如需在任意目录使用统一命令，请先从当前仓库全局安装 npm 包。该命令只负责安装 CLI，不会改变 Skill 的默认安装范围：
 
 ```bash
+npm install --global .
 cs-nexus setup --agent codex
-cs-nexus setup --agent claude-code
 ```
 
-Setup 验证所有 Agent Skill 都已出现在 `skills list --json` 后，才会保存 Router 使用的策略配置并输出 `Ready.`。全局安装保存到 `~/.cs-nexus/cs-nexus.yaml`，项目安装保存到当前项目的 `.cs-nexus/cs-nexus.yaml`；项目根目录中的 `cs-nexus.yaml` 优先级最高。
+Setup 会先展示安装范围、来源和完整命令，得到确认后才会安装。Skill 默认安装到当前项目；需要全局安装时显式传入 `--global`：
+
+```bash
+cs-nexus setup --agent codex --global
+./scripts/setup.sh --agent codex --global
+```
+
+PowerShell 启动脚本使用 `-Global`：
+
+```powershell
+.\scripts\setup.ps1 -Agent codex -Global
+```
+
+Setup 验证所有 Agent Skill 都已出现在 `skills list --json` 后，才会保存 Router 使用的策略配置并输出 `Ready.`。项目安装保存到当前项目的 `.cs-nexus/cs-nexus.yaml`，全局安装保存到 `~/.cs-nexus/cs-nexus.yaml`；项目根目录中的 `cs-nexus.yaml` 优先级最高。
 
 常用参数：
 
 ```text
 --dry-run          只展示计划，不修改环境
 --yes, -y          跳过交互确认，适合可信的 CI 环境
---project          安装到当前项目而不是用户目录
+--project          安装到当前项目（默认）
+--global           安装到用户目录
 --config <path>    使用另一份统一配置
 --agent <name>     指定 skills CLI 的 Agent 名称
 ```

@@ -18,7 +18,7 @@ test("validateConfig normalizes route shorthand and dependency forms", () => {
 
   assert.deepEqual(config.routing.debugging, { skill: "owner/repo:debug" });
   assert.deepEqual(config.dependencies["owner/repo:verify"], ["owner/repo:evidence"]);
-  assert.equal(config.installation.scope, "global");
+  assert.equal(config.installation.scope, "project");
   assert.equal(config.baseDir, path.resolve("fixtures"));
 });
 

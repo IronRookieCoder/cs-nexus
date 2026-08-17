@@ -1,6 +1,7 @@
 param(
     [string]$Agent,
     [switch]$Project,
+    [switch]$Global,
     [switch]$DryRun,
     [switch]$Yes
 )
@@ -18,6 +19,7 @@ try {
     $arguments = @("bin/cs-nexus.js", "setup")
     if ($Agent) { $arguments += @("--agent", $Agent) }
     if ($Project) { $arguments += "--project" }
+    if ($Global) { $arguments += "--global" }
     if ($DryRun) { $arguments += "--dry-run" }
     if ($Yes) { $arguments += "--yes" }
     & node @arguments

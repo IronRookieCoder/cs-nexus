@@ -98,7 +98,7 @@ export function validateConfig(value, configPath = path.resolve("cs-nexus.yaml")
   if (installation.agent !== undefined && (typeof installation.agent !== "string" || installation.agent.trim() === "")) {
     throw new Error("installation.agent 必须是非空字符串");
   }
-  const scope = installation.scope ?? "global";
+  const scope = installation.scope ?? "project";
   if (!SCOPES.has(scope)) {
     throw new Error(`installation.scope 仅支持 global 或 project`);
   }

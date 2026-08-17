@@ -59,6 +59,6 @@ policy:
 
 installation:
   agent: auto
-  scope: global
+  scope: project
   include:
     - local:task-router

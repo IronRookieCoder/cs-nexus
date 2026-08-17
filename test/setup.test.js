@@ -56,6 +56,7 @@ test("parseSetupArgs recognizes setup controls and rejects missing values", () =
     dryRun: true,
     yes: true
   });
+  assert.deepEqual(parseSetupArgs(["--global"]), { scope: "global" });
   assert.throws(() => parseSetupArgs(["--agent"]), /缺少参数/);
   assert.throws(() => parseSetupArgs(["--unsafe"]), /未知 setup 参数/);
 });
@@ -82,6 +83,9 @@ test("setup dry-run renders the default install plan without spawning", async ()
   }, io);
 
   assert.equal(spawnCount, 0);
+  assert.equal(plan.scope, "project");
+  assert.ok(plan.agentSkills.every((group) => group.scope === "project"));
+  assert.doesNotMatch(logs.join("\n"), /--global/);
   assert.equal(plan.agentSkills.length, 3);
   assert.match(logs.join("\n"), /obra\/superpowers/);
   assert.match(logs.join("\n"), /using-git-worktrees/);
@@ -95,6 +99,8 @@ test("setup executes install groups followed by installed-skill verification", a
   const writes = [];
   const io = {
     ...fakeIo(),
+    platform: "win32",
+    execPath: "C:\\nodejs\\node.exe",
     log: () => {},
     spawn: (command, args) => {
       calls.push([command, ...args]);
@@ -114,6 +120,8 @@ test("setup executes install groups followed by installed-skill verification", a
   }, io);
 
   assert.equal(calls.length, 4);
+  assert.ok(calls.every((call) => call[0] === "C:\\nodejs\\node.exe"));
+  assert.ok(calls.every((call) => call[1] === "C:\\nodejs\\node_modules\\npm\\bin\\npx-cli.js"));
   assert.ok(calls.slice(0, 3).every((call) => call.includes("add")));
   assert.ok(calls.slice(0, 3).every((call) => !call.includes("--global")));
   assert.ok(calls[3].includes("list"));
