@@ -30,6 +30,20 @@ test("loadManifest returns an empty v2 manifest when the file is missing", async
   assert.deepEqual(manifest, { version: 2, archived: [] });
 });
 
+test("loadManifest propagates read errors other than ENOENT", async () => {
+  const home = await tempHome("cs-nexus-manifest-");
+  const io = {
+    ...createDefaultIo(),
+    readFile: async () => {
+      throw Object.assign(new Error("read denied"), { code: "EACCES" });
+    }
+  };
+  await assert.rejects(
+    () => loadManifest(path.join(home, "skill-archive.json"), { io }),
+    (error) => error.code === "EACCES"
+  );
+});
+
 test("saveManifest and loadManifest round-trip entries", async () => {
   const home = await tempHome("cs-nexus-manifest-");
   const io = createDefaultIo();
@@ -309,6 +323,41 @@ test("restoreSkill refuses to overwrite existing entries at origin paths", async
     /恢复冲突[\s\S]*gamma/
   );
   assert.equal(io.exists(path.join(archiveDir, "gamma", "SKILL.md")), true, "冲突时归档区不被改动");
+});
+
+test("restoreSkill treats dangling links at origin paths as conflicts", async () => {
+  const home = await tempHome("cs-nexus-restore-");
+  const io = createDefaultIo();
+  const archiveDir = path.join(home, ".cs-nexus", "skill-archive");
+  const claudeRoot = path.join(home, ".claude", "skills");
+  await mkdir(claudeRoot, { recursive: true });
+  await mkdir(path.join(archiveDir, "beta"), { recursive: true });
+  await writeFile(path.join(archiveDir, "beta", "SKILL.md"), "---\nname: beta\ndescription: Beta skill.\n---\n", "utf8");
+
+  const betaDir = path.join(home, ".agents", "skills", "beta");
+  const goneTarget = path.join(claudeRoot, "gone-target");
+  const danglingLink = path.join(claudeRoot, "beta");
+  await symlink(goneTarget, danglingLink, LINK_TYPE);
+  assert.equal(io.exists(danglingLink), false, "前置条件：existsSync 应无视悬挂链接");
+
+  const manifest = {
+    version: 2,
+    archived: [{
+      name: "beta", description: "Beta skill.", skillFile: path.join(archiveDir, "beta", "SKILL.md"),
+      archivedAt: null, lastUsedAt: null, usageCount: null,
+      origin: { entries: [
+        { path: betaDir, kind: "dir" },
+        { path: danglingLink, kind: "link", target: goneTarget }
+      ] }
+    }]
+  };
+
+  await assert.rejects(
+    () => restoreSkill({ name: "beta", manifest, manifestPath: path.join(home, "m.json"), archiveDir,
+      lockPath: path.join(home, ".skill-lock.json"), io }),
+    /恢复冲突[\s\S]*beta/
+  );
+  assert.equal(io.exists(path.join(archiveDir, "beta", "SKILL.md")), true, "冲突时归档区不被改动");
 });
 
 test("restoreSkill supports rebuilt entries via targetDir and degrades on lock mismatch", async () => {

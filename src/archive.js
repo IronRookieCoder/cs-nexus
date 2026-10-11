@@ -8,7 +8,12 @@ import { parseSkillFrontmatter } from "./skill-inventory.js";
 export const MANIFEST_VERSION = 2;
 
 export async function loadManifest(manifestPath, { archiveDir = null, io = createDefaultIo() } = {}) {
-  const source = await io.readFile(manifestPath, "utf8").catch(() => null);
+  let source = null;
+  try {
+    source = await io.readFile(manifestPath, "utf8");
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error; // 仅文件缺失视为空清单，其余错误必须上抛（EACCES/EBUSY 等不可吞掉）
+  }
   if (source === null) return { version: MANIFEST_VERSION, archived: [] };
   try {
     const parsed = JSON.parse(source);
@@ -182,9 +187,14 @@ export async function restoreSkill({
     return { name, status: "no-origin", message: "清单缺少 origin 实体路径，请用 --to <目录> 指定恢复位置" };
   }
 
-  const conflictPaths = [...originEntries.map((item) => item.path), restorePath]
-    .filter((candidate, index, all) => all.indexOf(candidate) === index)
-    .filter((candidate) => io.exists(candidate));
+  const candidates = [...originEntries.map((item) => item.path), restorePath]
+    .filter((candidate, index, all) => all.indexOf(candidate) === index);
+  const conflictPaths = [];
+  for (const candidate of candidates) {
+    // 用 lstat 而非 exists：链接本身存在即算占用，悬挂链接也不能绕过冲突检查
+    const present = await io.lstat(candidate).then(() => true).catch(() => false);
+    if (present) conflictPaths.push(candidate);
+  }
   if (conflictPaths.length > 0) {
     throw new Error(`恢复冲突，以下路径已存在，不覆盖：\n${conflictPaths.join("\n")}`);
   }
