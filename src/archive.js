@@ -168,3 +168,71 @@ async function sameFile(a, b, io) {
   ]);
   return left !== null && left === right;
 }
+
+export async function restoreSkill({
+  name, targetDir = null, manifest, manifestPath, archiveDir, lockPath, io = createDefaultIo()
+}) {
+  const entry = manifest.archived.find((item) => item.name === name);
+  if (!entry) return { name, status: "missing" };
+
+  const originEntries = Array.isArray(entry.origin?.entries) ? entry.origin.entries : [];
+  const dirEntries = originEntries.filter((item) => item.kind === "dir");
+  const restorePath = targetDir ?? dirEntries[0]?.path ?? null;
+  if (!restorePath) {
+    return { name, status: "no-origin", message: "清单缺少 origin 实体路径，请用 --to <目录> 指定恢复位置" };
+  }
+
+  const conflictPaths = [...originEntries.map((item) => item.path), restorePath]
+    .filter((candidate, index, all) => all.indexOf(candidate) === index)
+    .filter((candidate) => io.exists(candidate));
+  if (conflictPaths.length > 0) {
+    throw new Error(`恢复冲突，以下路径已存在，不覆盖：\n${conflictPaths.join("\n")}`);
+  }
+
+  const archiveSkillDir = path.join(archiveDir, name);
+  if (!io.exists(archiveSkillDir)) {
+    return { name, status: "missing", message: `归档区中没有 ${name} 的文件` };
+  }
+
+  await io.mkdir(path.dirname(restorePath), { recursive: true });
+  await moveDir(archiveSkillDir, restorePath, io);
+
+  for (const location of originEntries.filter((item) => item.kind === "link")) {
+    await createLink(restorePath, location.path, io);
+  }
+
+  const lockRestored = await writeLockEntry(lockPath, name, entry.lockEntry, io);
+
+  manifest.archived = manifest.archived.filter((item) => item.name !== name);
+  await saveManifest(manifestPath, manifest, io);
+  return { name, status: "restored", restoredTo: restorePath, lockRestored };
+}
+
+export async function writeLockEntry(lockPath, name, lockEntry, io = createDefaultIo()) {
+  if (!lockEntry) return false;
+  const source = await io.readFile(lockPath, "utf8").catch(() => null);
+  let lock = null;
+  try {
+    lock = source ? JSON.parse(source) : null;
+  } catch {
+    lock = null;
+  }
+  if (!lock || lock.version !== 3 || !lock.skills || typeof lock.skills !== "object") {
+    return false; // lock 缺失或版本不兼容 → 跳过回写（spec §4.3）
+  }
+  lock.skills[name] = lockEntry;
+  await io.mkdir(path.dirname(lockPath), { recursive: true });
+  await io.writeFile(lockPath, JSON.stringify(lock, null, 2) + "\n", "utf8");
+  return true;
+}
+
+async function createLink(targetPath, linkPath, io) {
+  await io.mkdir(path.dirname(linkPath), { recursive: true });
+  const platform = io.platform ?? process.platform;
+  if (platform === "win32") {
+    await io.symlink(path.resolve(targetPath), linkPath, "junction");
+  } else {
+    const relative = path.relative(path.dirname(linkPath), targetPath);
+    await io.symlink(relative, linkPath);
+  }
+}

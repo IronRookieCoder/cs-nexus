@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, readFile, symlink, writeFile } from "node:fs/promises";
+import { lstat, mkdir, mkdtemp, readFile, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { archiveSkills, loadManifest, pinnedSkillNames, readLockEntry, rebuildManifest, saveManifest } from "../src/archive.js";
+import { archiveSkills, loadManifest, pinnedSkillNames, readLockEntry, rebuildManifest, restoreSkill, saveManifest, writeLockEntry } from "../src/archive.js";
 import { validateConfig } from "../src/config.js";
 import { createDefaultIo } from "../src/io.js";
 
@@ -236,4 +236,119 @@ test("archiveSkills snapshots the lock entry for the archived name", async () =>
   });
   const manifest = await loadManifest(path.join(home, ".cs-nexus", "skill-archive.json"), { io });
   assert.deepEqual(manifest.archived[0].lockEntry, lockEntry);
+});
+
+test("restoreSkill moves the dir back, recreates links and rewrites the lock entry", async () => {
+  const home = await tempHome("cs-nexus-restore-");
+  const io = createDefaultIo();
+  const agentsRoot = path.join(home, ".agents", "skills");
+  const claudeRoot = path.join(home, ".claude", "skills");
+  const archiveDir = path.join(home, ".cs-nexus", "skill-archive");
+  const manifestPath = path.join(home, ".cs-nexus", "skill-archive.json");
+  const lockPath = path.join(home, ".agents", ".skill-lock.json");
+
+  // 归档区里已有 beta；lock 里保留着另一个 skill 的条目
+  await mkdir(path.join(archiveDir, "beta"), { recursive: true });
+  await writeFile(path.join(archiveDir, "beta", "SKILL.md"), "---\nname: beta\ndescription: Beta skill.\n---\n", "utf8");
+  const betaLockEntry = { source: "example/beta", sourceType: "github", skillFolderHash: "def" };
+  await mkdir(path.dirname(lockPath), { recursive: true });
+  await writeFile(lockPath, JSON.stringify({ version: 3, skills: { "other-skill": { source: "x" } } }), "utf8");
+
+  const betaDir = path.join(agentsRoot, "beta");
+  const betaLink = path.join(claudeRoot, "beta");
+  const manifest = {
+    version: 2,
+    archived: [{
+      name: "beta", description: "Beta skill.", skillFile: path.join(archiveDir, "beta", "SKILL.md"),
+      archivedAt: "2026-10-11T12:00:00.000Z", lastUsedAt: null, usageCount: 0,
+      origin: { entries: [
+        { path: betaDir, kind: "dir" },
+        { path: betaLink, kind: "link", target: betaDir }
+      ] },
+      lockEntry: betaLockEntry
+    }]
+  };
+
+  const result = await restoreSkill({ name: "beta", manifest, manifestPath, archiveDir, lockPath, io });
+  assert.equal(result.status, "restored");
+  assert.equal(result.restoredTo, betaDir);
+  assert.equal(result.lockRestored, true);
+
+  assert.equal(io.exists(path.join(betaDir, "SKILL.md")), true);
+  const info = await lstat(betaLink);
+  assert.equal(info.isSymbolicLink(), true, "链接应被重建");
+  assert.equal((await readFile(path.join(betaLink, "SKILL.md"), "utf8")).includes("name: beta"), true, "链接应可解析到实体");
+
+  const lock = JSON.parse(await readFile(lockPath, "utf8"));
+  assert.deepEqual(lock.skills.beta, betaLockEntry);
+  assert.ok(lock.skills["other-skill"], "其他 lock 条目应保留");
+  const saved = await loadManifest(manifestPath, { io });
+  assert.deepEqual(saved.archived, []);
+});
+
+test("restoreSkill refuses to overwrite existing entries at origin paths", async () => {
+  const home = await tempHome("cs-nexus-restore-");
+  const io = createDefaultIo();
+  const archiveDir = path.join(home, ".cs-nexus", "skill-archive");
+  const conflictDir = path.join(home, ".codex", "skills", "gamma");
+  await mkdir(path.join(archiveDir, "gamma"), { recursive: true });
+  await writeFile(path.join(archiveDir, "gamma", "SKILL.md"), "---\nname: gamma\n---\n", "utf8");
+  await mkdir(conflictDir, { recursive: true });
+
+  const manifest = {
+    version: 2,
+    archived: [{
+      name: "gamma", description: null, skillFile: path.join(archiveDir, "gamma", "SKILL.md"),
+      archivedAt: null, lastUsedAt: null, usageCount: null,
+      origin: { entries: [{ path: conflictDir, kind: "dir" }] }
+    }]
+  };
+  await assert.rejects(
+    () => restoreSkill({ name: "gamma", manifest, manifestPath: path.join(home, "m.json"), archiveDir,
+      lockPath: path.join(home, ".skill-lock.json"), io }),
+    /恢复冲突[\s\S]*gamma/
+  );
+  assert.equal(io.exists(path.join(archiveDir, "gamma", "SKILL.md")), true, "冲突时归档区不被改动");
+});
+
+test("restoreSkill supports rebuilt entries via targetDir and degrades on lock mismatch", async () => {
+  const home = await tempHome("cs-nexus-restore-");
+  const io = createDefaultIo();
+  const archiveDir = path.join(home, ".cs-nexus", "skill-archive");
+  await mkdir(path.join(archiveDir, "omega"), { recursive: true });
+  await writeFile(path.join(archiveDir, "omega", "SKILL.md"), "---\nname: omega\n---\n", "utf8");
+  const manifestPath = path.join(home, "m.json");
+  const lockPath = path.join(home, "lock.json");
+  await writeFile(lockPath, JSON.stringify({ version: 9, skills: {} }), "utf8");
+
+  const noOrigin = { version: 2, archived: [{ name: "omega", description: null,
+    skillFile: path.join(archiveDir, "omega", "SKILL.md"), archivedAt: null, lastUsedAt: null,
+    usageCount: null, origin: { entries: [] }, lockEntry: { source: "x" } }] };
+
+  const refused = await restoreSkill({ name: "omega", manifest: noOrigin, manifestPath, archiveDir, lockPath, io });
+  assert.equal(refused.status, "no-origin");
+
+  const target = path.join(home, "restored", "omega");
+  const result = await restoreSkill({ name: "omega", targetDir: target, manifest: noOrigin, manifestPath, archiveDir, lockPath, io });
+  assert.equal(result.status, "restored");
+  assert.equal(result.restoredTo, target);
+  assert.equal(result.lockRestored, false, "lock 版本不兼容时应跳过回写");
+});
+
+test("writeLockEntry returns false without a snapshot or with a broken lock", async () => {
+  const home = await tempHome("cs-nexus-lock-");
+  const io = createDefaultIo();
+  const lockPath = path.join(home, "lock.json");
+  assert.equal(await writeLockEntry(lockPath, "x", null, io), false);
+  await writeFile(lockPath, "{corrupt", "utf8");
+  assert.equal(await writeLockEntry(lockPath, "x", { source: "y" }, io), false);
+});
+
+test("restoreSkill reports missing names", async () => {
+  const home = await tempHome("cs-nexus-restore-");
+  const io = createDefaultIo();
+  const manifest = { version: 2, archived: [] };
+  const result = await restoreSkill({ name: "ghost", manifest, manifestPath: path.join(home, "m.json"),
+    archiveDir: path.join(home, "skill-archive"), lockPath: path.join(home, "lock.json"), io });
+  assert.equal(result.status, "missing");
 });
