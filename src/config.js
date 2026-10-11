@@ -57,6 +57,12 @@ export function resolveConfigPath({ cwd, env, home, exists }) {
   return null;
 }
 
+export async function loadCommandConfig(explicitPath, io) {
+  if (explicitPath) return loadConfig(explicitPath);
+  const resolved = resolveConfigPath({ cwd: io.cwd, env: io.env, home: io.home, exists: io.exists });
+  return resolved ? loadConfig(resolved) : null;
+}
+
 export async function loadConfig(configPath) {
   const absolutePath = path.resolve(configPath);
   let source;

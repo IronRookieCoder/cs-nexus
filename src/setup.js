@@ -202,9 +202,15 @@ function renderCommand(command) {
 function helpText() {
   return `用法：
   cs-nexus setup [--config <path>] [--agent <name>] [--global|--project] [--dry-run] [--yes]
+  cs-nexus skill-usage [--json] [--config <path>]
+  cs-nexus archive <name...> [--yes] [--config <path>]
+  cs-nexus archive --list [--json]
+  cs-nexus archive --restore <name> [--to <dir>] [--config <path>]
   cs-nexus --version
 
-setup 默认读取随包提供的 cs-nexus.yaml，展示完整安装计划并在执行前请求确认。`;
+setup 默认读取随包提供的 cs-nexus.yaml，展示完整安装计划并在执行前请求确认。
+skill-usage 扫描 Claude Code 与 Codex 会话统计全局 skill 使用情况。
+archive 将不常用 skill 迁入 ~/.cs-nexus/skill-archive 并登记清单，--restore 恢复。`;
 }
 
 function defaultIo() {
