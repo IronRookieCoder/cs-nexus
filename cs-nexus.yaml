@@ -41,6 +41,12 @@ providers:
     install:
       type: agent-skill
 
+  local:skill-manager:
+    source: ./skills/skill-manager
+    name: skill-manager
+    install:
+      type: agent-skill
+
 policy:
   default: auto
   complex_when:
@@ -62,3 +68,4 @@ installation:
   scope: project
   include:
     - local:task-router
+    - local:skill-manager

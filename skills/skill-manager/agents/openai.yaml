@@ -1,0 +1,4 @@
+interface:
+  display_name: "Skill Manager"
+  short_description: "查看 skill 使用情况，归档不常用 skill，按需加载已归档 skill"
+  default_prompt: "Use $skill-manager to review skill usage or load an archived skill."

@@ -27,7 +27,8 @@ const installedSkills = [
   "requesting-code-review",
   "subagent-driven-development",
   "verification-before-completion",
-  "task-router"
+  "task-router",
+  "skill-manager"
 ].map((name) => ({ name }));
 
 test("detectAgent honors explicit environment and agent runtime markers", () => {
@@ -86,12 +87,13 @@ test("setup dry-run renders the default install plan without spawning", async ()
   assert.equal(plan.scope, "project");
   assert.ok(plan.agentSkills.every((group) => group.scope === "project"));
   assert.doesNotMatch(logs.join("\n"), /--global/);
-  assert.equal(plan.agentSkills.length, 3);
+  assert.equal(plan.agentSkills.length, 4);
   assert.match(logs.join("\n"), /obra\/superpowers/);
   assert.match(logs.join("\n"), /using-git-worktrees/);
   assert.match(logs.join("\n"), /requesting-code-review/);
   assert.match(logs.join("\n"), /finishing-a-development-branch/);
   assert.match(logs.join("\n"), /task-router/);
+  assert.match(logs.join("\n"), /skill-manager/);
 });
 
 test("setup executes install groups followed by installed-skill verification", async () => {
@@ -119,13 +121,13 @@ test("setup executes install groups followed by installed-skill verification", a
     scope: "project"
   }, io);
 
-  assert.equal(calls.length, 4);
+  assert.equal(calls.length, 5);
   assert.ok(calls.every((call) => call[0] === "C:\\nodejs\\node.exe"));
   assert.ok(calls.every((call) => call[1] === "C:\\nodejs\\node_modules\\npm\\bin\\npx-cli.js"));
-  assert.ok(calls.slice(0, 3).every((call) => call.includes("add")));
-  assert.ok(calls.slice(0, 3).every((call) => !call.includes("--global")));
-  assert.ok(calls[3].includes("list"));
-  assert.ok(calls[3].includes("--json"));
+  assert.ok(calls.slice(0, 4).every((call) => call.includes("add")));
+  assert.ok(calls.slice(0, 4).every((call) => !call.includes("--global")));
+  assert.ok(calls[4].includes("list"));
+  assert.ok(calls[4].includes("--json"));
   assert.equal(writes[0][1], path.join("/workspace", ".cs-nexus"));
   assert.equal(writes[1][1], path.join("/workspace", ".cs-nexus", "cs-nexus.yaml"));
 });

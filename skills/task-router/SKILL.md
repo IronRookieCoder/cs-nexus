@@ -80,7 +80,7 @@ Do not downgrade and re-upgrade. Do not manufacture retroactive process document
 
 Treat browser automation, visual checks, TDD, code review, deployment, and similar tools as capabilities, not top-level routes. Invoke one only when the task needs it. A capability has one active provider; never stack alternative providers for the same role.
 
-If no configured provider exists, prefer project skills, team skills, configured trusted skills, then mainstream community skills. Recommend discovery before building a reusable capability from scratch.
+If no configured provider exists, prefer project skills, team skills, configured trusted skills, then mainstream community skills. Before turning to the community, check the skill-manager archive manifest (`~/.cs-nexus/skill-archive.json`) for an archived skill that already provides the capability and load it via skill-manager. Recommend discovery before building a reusable capability from scratch.
 
 ## Verify completion
 
