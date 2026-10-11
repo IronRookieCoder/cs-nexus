@@ -94,7 +94,7 @@ function describeProvider(reference, config) {
   };
 }
 
-function skillNameFromReference(reference) {
+export function skillNameFromReference(reference) {
   const separator = reference.lastIndexOf(":");
   return separator === -1 ? reference : reference.slice(separator + 1);
 }
