@@ -5,6 +5,58 @@ import YAML from "yaml";
 const INSTALL_TYPES = new Set(["agent-skill", "upstream-guide", "command"]);
 const SCOPES = new Set(["global", "project"]);
 
+export const DEFAULT_ARCHIVING = Object.freeze({
+  enabled: true,
+  unusedAfterDays: 30,
+  minInvocations: 5,
+  newSkillGraceDays: 7,
+  auto: false
+});
+
+const ARCHIVING_INT_KEYS = [
+  ["unused_after_days", "unusedAfterDays"],
+  ["min_invocations", "minInvocations"],
+  ["new_skill_grace_days", "newSkillGraceDays"]
+];
+
+export function normalizeArchiving(raw) {
+  const result = { ...DEFAULT_ARCHIVING };
+  if (raw === undefined) return result;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    throw new Error("archiving 必须是对象");
+  }
+  for (const [snakeKey, camelKey] of ARCHIVING_INT_KEYS) {
+    const value = raw[snakeKey];
+    if (value === undefined) continue;
+    if (!Number.isInteger(value) || value <= 0) {
+      throw new Error(`archiving.${snakeKey} 必须是正整数`);
+    }
+    result[camelKey] = value;
+  }
+  for (const key of ["enabled", "auto"]) {
+    const value = raw[key];
+    if (value === undefined) continue;
+    if (typeof value !== "boolean") {
+      throw new Error(`archiving.${key} 必须是布尔值`);
+    }
+    result[key] = value;
+  }
+  return result;
+}
+
+export function resolveConfigPath({ cwd, env, home, exists }) {
+  const candidates = [
+    path.join(cwd, "cs-nexus.yaml"),
+    path.join(cwd, ".cs-nexus", "cs-nexus.yaml"),
+    env.CS_NEXUS_CONFIG,
+    path.join(home, ".cs-nexus", "cs-nexus.yaml")
+  ];
+  for (const candidate of candidates) {
+    if (candidate && exists(candidate)) return candidate;
+  }
+  return null;
+}
+
 export async function loadConfig(configPath) {
   const absolutePath = path.resolve(configPath);
   let source;
@@ -125,6 +177,8 @@ export function validateConfig(value, configPath = path.resolve("cs-nexus.yaml")
     throw new Error("policy.escalation.direction 仅支持 simple-to-complex");
   }
 
+  const archiving = normalizeArchiving(value.archiving);
+
   return {
     version: 1,
     routing,
@@ -136,6 +190,7 @@ export function validateConfig(value, configPath = path.resolve("cs-nexus.yaml")
       scope,
       include: [...new Set(include)]
     },
+    archiving,
     configPath,
     baseDir: path.dirname(configPath)
   };
