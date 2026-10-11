@@ -15,7 +15,7 @@
   ],
   "scripts": {
     "test": "node --test",
-    "check": "node --check bin/cs-nexus.js && node --check src/config.js && node --check src/dependencies.js && node --check src/install-plan.js && node --check src/setup.js && node --check src/usage/claude-code.js && node --check src/usage/codex.js && node --check src/io.js && node --check src/skill-inventory.js && node --check src/usage/scan.js && node --check src/archive.js && node --check src/commands/skill-usage.js"
+    "check": "node --check bin/cs-nexus.js && node --check src/config.js && node --check src/dependencies.js && node --check src/install-plan.js && node --check src/setup.js && node --check src/usage/claude-code.js && node --check src/usage/codex.js && node --check src/io.js && node --check src/skill-inventory.js && node --check src/usage/scan.js && node --check src/archive.js && node --check src/commands/skill-usage.js && node --check src/commands/archive.js"
   },
   "engines": {
     "node": ">=20"

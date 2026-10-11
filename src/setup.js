@@ -186,7 +186,7 @@ async function persistPolicyConfig(sourcePath, destinationPath, io) {
   await io.writeFile(destinationPath, source, "utf8");
 }
 
-function npxInvocation(args, io) {
+export function npxInvocation(args, io) {
   const platform = io.platform ?? process.platform;
   if (platform !== "win32") return ["npx", ...args];
 
