@@ -15,7 +15,7 @@
   ],
   "scripts": {
     "test": "node --test",
-    "check": "node --check bin/cs-nexus.js && node --check src/config.js && node --check src/dependencies.js && node --check src/install-plan.js && node --check src/setup.js && node --check src/usage/claude-code.js"
+    "check": "node --check bin/cs-nexus.js && node --check src/config.js && node --check src/dependencies.js && node --check src/install-plan.js && node --check src/setup.js && node --check src/usage/claude-code.js && node --check src/usage/codex.js"
   },
   "engines": {
     "node": ">=20"
